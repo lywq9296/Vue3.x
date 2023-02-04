@@ -37,6 +37,7 @@ describe('defineProps w/ type declaration + withDefaults', () => {
       z?: string
       bool?: boolean
       boolAndUndefined: boolean | undefined
+      boolWithUndefined: boolean
     }>(),
     {
       number: 123,
@@ -45,7 +46,8 @@ describe('defineProps w/ type declaration + withDefaults', () => {
       fn: () => {},
       genStr: () => '',
       y: undefined,
-      z: 'string'
+      z: 'string',
+      boolWithUndefined: undefined
     }
   )
 
@@ -65,6 +67,7 @@ describe('defineProps w/ type declaration + withDefaults', () => {
 
   expectType<boolean>(res.bool)
   expectType<boolean>(res.boolAndUndefined)
+  expectType<boolean | undefined>(res.boolWithUndefined)
 })
 
 describe('defineProps w/ union type declaration + withDefaults', () => {
