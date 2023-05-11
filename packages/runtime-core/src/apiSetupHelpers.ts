@@ -280,6 +280,12 @@ interface DefineModelOptions {
 
 type NotUndefined<T> = T extends undefined ? never : T
 
+type UndefinedKey<T, K extends keyof T = keyof T> = K extends any
+  ? T[K] extends undefined
+    ? K
+    : never
+  : never
+
 type InferDefaults<T> = {
   [K in keyof T]?: InferDefault<T, NotUndefined<T[K]>>
 }
@@ -294,10 +300,19 @@ type InferDefault<P, T> = T extends
   ? T | ((props: P) => T)
   : (props: P) => T
 
-type PropsWithDefaults<Base, Defaults> = Base & {
+type PropsWithDefaults<Base, Defaults> = Omit<Base, UndefinedKey<Defaults>> & {
+  [K in keyof Pick<
+    Base,
+    UndefinedKey<Defaults> extends infer R
+      ? R extends keyof Base
+        ? R
+        : never
+      : never
+  >]: Base[K] | undefined
+} & {
   [K in keyof Defaults]: K extends keyof Base
-    ? Defaults[K] extends undefined
-      ? Base[K]
+    ? K extends UndefinedKey<Defaults>
+      ? Base[K] | undefined
       : NotUndefined<Base[K]>
     : never
 }
