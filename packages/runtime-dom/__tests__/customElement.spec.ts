@@ -1,4 +1,5 @@
 import {
+  AttrsType,
   defineAsyncComponent,
   defineComponent,
   defineCustomElement,
@@ -287,8 +288,9 @@ describe('defineCustomElement', () => {
 
   describe('attrs', () => {
     const E = defineCustomElement({
+      attrs: Object as AttrsType<{ foo: string }>,
       render() {
-        return [h('div', null, this.$attrs.foo as string)]
+        return [h('div', null, this.$attrs.foo)]
       }
     })
     customElements.define('my-el-attrs', E)

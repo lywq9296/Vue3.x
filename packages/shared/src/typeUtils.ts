@@ -21,3 +21,11 @@ export type Awaited<T> = T extends null | undefined
     ? Awaited<V> // recursively unwrap the value
     : never // the argument to `then` was not callable
   : T // non-object or non-thenable
+
+// Conditional returns can enforce identical types.
+// See here: https://github.com/Microsoft/TypeScript/issues/27024#issuecomment-421529650
+export type Equal<Left, Right> = (<U>() => U extends Left ? 1 : 0) extends <
+  U
+>() => U extends Right ? 1 : 0
+  ? true
+  : false

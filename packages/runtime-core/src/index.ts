@@ -71,6 +71,7 @@ export {
   defineExpose,
   defineOptions,
   defineSlots,
+  defineAttrs,
   defineModel,
   withDefaults,
   useModel
@@ -246,7 +247,8 @@ export type {
   MethodOptions,
   ComputedOptions,
   RuntimeCompilerOptions,
-  ComponentInjectOptions
+  ComponentInjectOptions,
+  AttrsType
 } from './componentOptions'
 export type { EmitsOptions, ObjectEmitsOptions } from './componentEmits'
 export type {

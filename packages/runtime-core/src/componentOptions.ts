@@ -111,7 +111,8 @@ export interface ComponentOptionsBase<
   Defaults = {},
   I extends ComponentInjectOptions = {},
   II extends string = string,
-  S extends SlotsType = {}
+  S extends SlotsType = {},
+  Attrs extends AttrsType = Record<string, unknown>
 > extends LegacyOptions<Props, D, C, M, Mixin, Extends, I, II>,
     ComponentInternalOptions,
     ComponentCustomOptions {
@@ -126,7 +127,7 @@ export interface ComponentOptionsBase<
           >
         >
     >,
-    ctx: SetupContext<E, S>
+    ctx: SetupContext<E, S, Attrs>
   ) => Promise<RawBindings> | RawBindings | RenderFunction | void
   name?: string
   template?: string | object // can be a direct DOM node
@@ -141,6 +142,7 @@ export interface ComponentOptionsBase<
   inheritAttrs?: boolean
   emits?: (E | EE[]) & ThisType<void>
   slots?: S
+  attrs?: Attrs
   // TODO infer public instance type based on exposed keys
   expose?: string[]
   serverPrefetch?(): void | Promise<any>
@@ -224,6 +226,7 @@ export type ComponentOptionsWithoutProps<
   I extends ComponentInjectOptions = {},
   II extends string = string,
   S extends SlotsType = {},
+  Attrs extends AttrsType = Record<string, unknown>,
   PE = Props & EmitsToProps<E>
 > = ComponentOptionsBase<
   PE,
@@ -238,7 +241,8 @@ export type ComponentOptionsWithoutProps<
   {},
   I,
   II,
-  S
+  S,
+  Attrs
 > & {
   props?: undefined
 } & ThisType<
@@ -255,7 +259,8 @@ export type ComponentOptionsWithoutProps<
       {},
       false,
       I,
-      S
+      S,
+      Attrs
     >
   >
 
@@ -272,6 +277,7 @@ export type ComponentOptionsWithArrayProps<
   I extends ComponentInjectOptions = {},
   II extends string = string,
   S extends SlotsType = {},
+  Attrs extends AttrsType = Record<string, unknown>,
   Props = Prettify<Readonly<{ [key in PropNames]?: any } & EmitsToProps<E>>>
 > = ComponentOptionsBase<
   Props,
@@ -286,7 +292,8 @@ export type ComponentOptionsWithArrayProps<
   {},
   I,
   II,
-  S
+  S,
+  Attrs
 > & {
   props: PropNames[]
 } & ThisType<
@@ -303,7 +310,8 @@ export type ComponentOptionsWithArrayProps<
       {},
       false,
       I,
-      S
+      S,
+      Attrs
     >
   >
 
@@ -320,6 +328,7 @@ export type ComponentOptionsWithObjectProps<
   I extends ComponentInjectOptions = {},
   II extends string = string,
   S extends SlotsType = {},
+  Attrs extends AttrsType = Record<string, unknown>,
   Props = Prettify<Readonly<ExtractPropTypes<PropsOptions> & EmitsToProps<E>>>,
   Defaults = ExtractDefaultPropTypes<PropsOptions>
 > = ComponentOptionsBase<
@@ -335,7 +344,8 @@ export type ComponentOptionsWithObjectProps<
   Defaults,
   I,
   II,
-  S
+  S,
+  Attrs
 > & {
   props: PropsOptions & ThisType<void>
 } & ThisType<
@@ -352,7 +362,8 @@ export type ComponentOptionsWithObjectProps<
       Defaults,
       false,
       I,
-      S
+      S,
+      Attrs
     >
   >
 
@@ -406,6 +417,25 @@ export type ComponentOptionsMixin = ComponentOptionsBase<
   any
 >
 
+declare const AttrSymbol: unique symbol
+export type AttrsType<T extends Record<string, any> = Record<string, any>> = {
+  [AttrSymbol]?: T extends new () => { $props: infer P }
+    ? NonNullable<P>
+    : T extends (props: infer P, ...args: any) => any
+    ? P
+    : T
+}
+
+export type UnwrapAttrsType<
+  Attrs extends AttrsType,
+  T = NonNullable<Attrs[typeof AttrSymbol]>
+> = [keyof Attrs] extends [never]
+  ? Data
+  : Readonly<
+      Prettify<{
+        [K in keyof T]: T[K]
+      }>
+    >
 export type ComputedOptions = Record<
   string,
   ComputedGetter<any> | WritableComputedOptions<any>
@@ -422,6 +452,17 @@ export type ExtractComputedReturns<T extends any> = {
     ? TReturn
     : never
 }
+
+export type StrictUnwrapAttrsType<
+  Attrs extends Record<string, unknown>,
+  T = NonNullable<Attrs>
+> = [keyof T] extends [never]
+  ? Readonly<Record<string, unknown>>
+  : T extends new () => { $props: infer P }
+  ? Readonly<NonNullable<P>>
+  : T extends (props: infer P, ...args: any) => any
+  ? Readonly<NonNullable<P>>
+  : Readonly<T>
 
 export type ObjectWatchOptionItem = {
   handler: WatchCallback | string

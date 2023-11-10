@@ -10,10 +10,13 @@ import {
   SetupContext,
   h,
   SlotsType,
+  AttrsType,
   Slots,
-  VNode
+  VNode,
+  ImgHTMLAttributes,
+  StyleValue
 } from 'vue'
-import { describe, expectType, IsUnion } from './utils'
+import { describe, expectType, IsUnion, test } from './utils'
 
 describe('with object props', () => {
   interface ExpectedProps {
@@ -1186,6 +1189,270 @@ describe('async setup', () => {
 
   // setup context properties should be mutable
   vm.a = 2
+})
+
+describe('define attrs', () => {
+  test('define attrs w/ object props', () => {
+    const MyComp = defineComponent({
+      props: {
+        foo: String
+      },
+      attrs: Object as AttrsType<{
+        bar?: number
+      }>,
+      created() {
+        expectType<number | undefined>(this.$attrs.bar)
+      }
+    })
+    expectType<JSX.Element>(<MyComp foo="1" bar={1} />)
+  })
+
+  test('define attrs w/ array props', () => {
+    const MyComp = defineComponent({
+      props: ['foo'],
+      attrs: Object as AttrsType<{
+        bar?: number
+      }>,
+      created() {
+        expectType<number | undefined>(this.$attrs.bar)
+      }
+    })
+    expectType<JSX.Element>(<MyComp foo="1" bar={1} />)
+  })
+
+  test('define attrs w/ no props', () => {
+    const MyComp = defineComponent({
+      attrs: Object as AttrsType<{
+        bar?: number
+      }>,
+      created() {
+        expectType<number | undefined>(this.$attrs.bar)
+      }
+    })
+    expectType<JSX.Element>(<MyComp bar={1} />)
+  })
+
+  test('define attrs w/ composition api', () => {
+    const MyComp = defineComponent({
+      props: {
+        foo: {
+          type: String,
+          required: true
+        }
+      },
+      attrs: Object as AttrsType<{
+        bar?: number
+      }>,
+      setup(props, { attrs }) {
+        expectType<string>(props.foo)
+        expectType<number | undefined>(attrs.bar)
+      }
+    })
+    expectType<JSX.Element>(<MyComp foo="1" bar={1} />)
+  })
+
+  test('define attrs w/ functional component', () => {
+    const MyComp = defineComponent(
+      (props: { foo: string }, ctx) => {
+        expectType<number | undefined>(ctx.attrs.bar)
+        return () => (
+          // return a render function (both JSX and h() works)
+          <div>{props.foo}</div>
+        )
+      },
+      {
+        attrs: Object as AttrsType<{
+          bar?: number
+        }>
+      }
+    )
+    expectType<JSX.Element>(<MyComp foo={'1'} bar={1} />)
+  })
+
+  test('define attrs as low priority', () => {
+    const MyComp = defineComponent({
+      props: {
+        foo: String
+      },
+      attrs: Object as AttrsType<{
+        foo?: number
+      }>,
+      created() {
+        // @ts-expect-error
+        this.$attrs.foo
+
+        expectType<string | undefined>(this.foo)
+      }
+    })
+    expectType<JSX.Element>(<MyComp foo="1" />)
+  })
+
+  test('define required attrs', () => {
+    const MyComp = defineComponent({
+      attrs: Object as AttrsType<{
+        bar: number
+      }>,
+      created() {
+        expectType<number | undefined>(this.$attrs.bar)
+      }
+    })
+    expectType<JSX.Element>(<MyComp bar={1} />)
+    // @ts-expect-error
+    expectType<JSX.Element>(<MyComp />)
+  })
+
+  test('define no attrs w/ object props', () => {
+    const MyComp = defineComponent({
+      props: {
+        foo: String
+      },
+      created() {
+        expectType<unknown>(this.$attrs.bar)
+      }
+    })
+    // @ts-expect-error
+    expectType<JSX.Element>(<MyComp foo="1" bar={1} />)
+  })
+
+  test('define no attrs w/ functional component', () => {
+    const MyComp = defineComponent((props: { foo: string }, ctx) => {
+      expectType<unknown>(ctx.attrs.bar)
+      return () => (
+        // return a render function (both JSX and h() works)
+        <div>{props.foo}</div>
+      )
+    })
+    expectType<JSX.Element>(<MyComp foo={'1'} />)
+    // @ts-expect-error
+    expectType<JSX.Element>(<MyComp foo="1" bar={1} />)
+  })
+  test('wrap elements', () => {
+    const MyImg = defineComponent({
+      props: {
+        foo: String
+      },
+      attrs: Object as AttrsType<ImgHTMLAttributes>,
+      created() {
+        expectType<any>(this.$attrs.class)
+        expectType<StyleValue | undefined>(this.$attrs.style)
+      },
+      render() {
+        return <img {...this.$attrs} />
+      }
+    })
+    expectType<JSX.Element>(<MyImg class={'str'} style={'str'} src={'str'} />)
+  })
+
+  test('wrap components', () => {
+    const Child = defineComponent({
+      props: {
+        foo: String
+      },
+      emits: {
+        baz: (val: number) => true
+      },
+      render() {
+        return <div>{this.foo}</div>
+      }
+    })
+    const Comp = defineComponent({
+      props: {
+        bar: Number
+      },
+      attrs: Object as AttrsType<typeof Child>,
+      created() {
+        expectType<unknown>(this.$attrs.class)
+        expectType<unknown>(this.$attrs.style)
+      },
+      render() {
+        return <Child {...this.$attrs} />
+      }
+    })
+    expectType<JSX.Element>(
+      <Comp
+        class={'str'}
+        style={'str'}
+        bar={1}
+        foo={'str'}
+        onBaz={val => {
+          expectType<number>(val)
+        }}
+      />
+    )
+  })
+
+  test('wrap components w/ functional component', () => {
+    const Child = defineComponent((props: { foo: string }, ctx) => {
+      return () => <div>{props.foo}</div>
+    })
+    const Comp = defineComponent({
+      props: {
+        bar: Number
+      },
+      attrs: Object as AttrsType<typeof Child>,
+      created() {
+        expectType<unknown>(this.$attrs.class)
+        expectType<unknown>(this.$attrs.style)
+      },
+      render() {
+        return <Child {...this.$attrs} />
+      }
+    })
+    expectType<JSX.Element>(
+      <Comp class={'str'} style={'str'} bar={1} foo={'str'} />
+    )
+  })
+  test('ignore reserved props', () => {
+    defineComponent({
+      attrs: Object as AttrsType<{
+        bar?: number
+      }>,
+      created() {
+        // @ts-expect-error reserved props
+        this.$attrs.key
+        // @ts-expect-error reserved props
+        this.$attrs.ref
+      }
+    })
+    defineComponent(
+      (props: { foo: string }, ctx) => {
+        // @ts-expect-error reserved props
+        ctx.attrs.key
+        // @ts-expect-error reserved props
+        ctx.attrs.ref
+        return () => <div>{props.foo}</div>
+      },
+      {
+        attrs: Object as AttrsType<{
+          bar?: number
+        }>
+      }
+    )
+  })
+
+  test('always readonly', () => {
+    defineComponent({
+      attrs: Object as AttrsType<{
+        bar?: number
+      }>,
+      created() {
+        // @ts-expect-error readonly
+        this.$attrs.class = 'test'
+      }
+    })
+    defineComponent(
+      (props: { foo: string }, ctx) => {
+        // @ts-expect-error readonly
+        ctx.attrs.bar = 1
+        return () => <div>{props.foo}</div>
+      },
+      {
+        attrs: Object as AttrsType<{
+          bar?: number
+        }>
+      }
+    )
+  })
 })
 
 // #5948

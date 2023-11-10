@@ -21,7 +21,8 @@ import {
   ConcreteComponent,
   ComponentOptions,
   ComponentInjectOptions,
-  SlotsType
+  SlotsType,
+  AttrsType
 } from '@vue/runtime-core'
 import { camelize, extend, hyphenate, isArray, toNumber } from '@vue/shared'
 import { hydrate, render } from '.'
@@ -54,7 +55,8 @@ export function defineCustomElement<
   EE extends string = string,
   I extends ComponentInjectOptions = {},
   II extends string = string,
-  S extends SlotsType = {}
+  S extends SlotsType = {},
+  Attrs extends AttrsType = Record<string, unknown>
 >(
   options: ComponentOptionsWithoutProps<
     Props,
@@ -68,7 +70,8 @@ export function defineCustomElement<
     EE,
     I,
     II,
-    S
+    S,
+    Attrs
   > & { styles?: string[] }
 ): VueElementConstructor<Props>
 
@@ -85,7 +88,8 @@ export function defineCustomElement<
   EE extends string = string,
   I extends ComponentInjectOptions = {},
   II extends string = string,
-  S extends SlotsType = {}
+  S extends SlotsType = {},
+  Attrs extends AttrsType = Record<string, unknown>
 >(
   options: ComponentOptionsWithArrayProps<
     PropNames,
@@ -99,7 +103,8 @@ export function defineCustomElement<
     EE,
     I,
     II,
-    S
+    S,
+    Attrs
   > & { styles?: string[] }
 ): VueElementConstructor<{ [K in PropNames]: any }>
 
@@ -116,7 +121,8 @@ export function defineCustomElement<
   EE extends string = string,
   I extends ComponentInjectOptions = {},
   II extends string = string,
-  S extends SlotsType = {}
+  S extends SlotsType = {},
+  Attrs extends AttrsType = Record<string, unknown>
 >(
   options: ComponentOptionsWithObjectProps<
     PropsOptions,
@@ -130,7 +136,8 @@ export function defineCustomElement<
     EE,
     I,
     II,
-    S
+    S,
+    Attrs
   > & { styles?: string[] }
 ): VueElementConstructor<ExtractPropTypes<PropsOptions>>
 

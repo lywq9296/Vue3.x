@@ -8,12 +8,15 @@ import {
   RenderFunction,
   ComponentOptionsBase,
   ComponentInjectOptions,
-  ComponentOptions
+  ComponentOptions,
+  AttrsType,
+  UnwrapAttrsType
 } from './componentOptions'
 import {
   SetupContext,
   AllowedComponentProps,
-  ComponentCustomProps
+  ComponentCustomProps,
+  HasDefinedAttrs
 } from './component'
 import {
   ExtractPropTypes,
@@ -54,7 +57,8 @@ export type DefineComponent<
   PP = PublicProps,
   Props = ResolveProps<PropsOrPropOptions, E>,
   Defaults = ExtractDefaultPropTypes<PropsOrPropOptions>,
-  S extends SlotsType = {}
+  S extends SlotsType = {},
+  Attrs extends AttrsType = Record<string, unknown>
 > = ComponentPublicInstanceConstructor<
   CreateComponentPublicInstance<
     Props,
@@ -69,7 +73,8 @@ export type DefineComponent<
     Defaults,
     true,
     {},
-    S
+    S,
+    Attrs
   > &
     Props
 > &
@@ -86,7 +91,8 @@ export type DefineComponent<
     Defaults,
     {},
     string,
-    S
+    S,
+    Attrs
   > &
   PP
 
@@ -101,18 +107,23 @@ export function defineComponent<
   Props extends Record<string, any>,
   E extends EmitsOptions = {},
   EE extends string = string,
-  S extends SlotsType = {}
+  S extends SlotsType = {},
+  Attrs extends AttrsType = Record<string, unknown>,
+  PropsAttrs = HasDefinedAttrs<Attrs> extends true
+    ? UnwrapAttrsType<NonNullable<Attrs>>
+    : {}
 >(
   setup: (
     props: Props,
-    ctx: SetupContext<E, S>
+    ctx: SetupContext<E, S, Attrs>
   ) => RenderFunction | Promise<RenderFunction>,
   options?: Pick<ComponentOptions, 'name' | 'inheritAttrs'> & {
     props?: (keyof Props)[]
     emits?: E | EE[]
     slots?: S
+    attrs?: Attrs
   }
-): (props: Props & EmitsToProps<E>) => any
+): (props: Props & EmitsToProps<E> & PropsAttrs) => any
 export function defineComponent<
   Props extends Record<string, any>,
   E extends EmitsOptions = {},
@@ -144,6 +155,7 @@ export function defineComponent<
   E extends EmitsOptions = {},
   EE extends string = string,
   S extends SlotsType = {},
+  Attrs extends AttrsType = Record<string, unknown>,
   I extends ComponentInjectOptions = {},
   II extends string = string
 >(
@@ -159,7 +171,8 @@ export function defineComponent<
     EE,
     I,
     II,
-    S
+    S,
+    Attrs
   >
 ): DefineComponent<
   Props,
@@ -174,7 +187,8 @@ export function defineComponent<
   PublicProps,
   ResolveProps<Props, E>,
   ExtractDefaultPropTypes<Props>,
-  S
+  S,
+  Attrs
 >
 
 // overload 3: object format with array props declaration
@@ -191,6 +205,7 @@ export function defineComponent<
   E extends EmitsOptions = {},
   EE extends string = string,
   S extends SlotsType = {},
+  Attrs extends AttrsType = Record<string, unknown>,
   I extends ComponentInjectOptions = {},
   II extends string = string,
   Props = Readonly<{ [key in PropNames]?: any }>
@@ -207,7 +222,8 @@ export function defineComponent<
     EE,
     I,
     II,
-    S
+    S,
+    Attrs
   >
 ): DefineComponent<
   Props,
@@ -222,7 +238,8 @@ export function defineComponent<
   PublicProps,
   ResolveProps<Props, E>,
   ExtractDefaultPropTypes<Props>,
-  S
+  S,
+  Attrs
 >
 
 // overload 4: object format with object props declaration
@@ -241,7 +258,8 @@ export function defineComponent<
   EE extends string = string,
   S extends SlotsType = {},
   I extends ComponentInjectOptions = {},
-  II extends string = string
+  II extends string = string,
+  Attrs extends AttrsType = Record<string, unknown>
 >(
   options: ComponentOptionsWithObjectProps<
     PropsOptions,
@@ -255,7 +273,8 @@ export function defineComponent<
     EE,
     I,
     II,
-    S
+    S,
+    Attrs
   >
 ): DefineComponent<
   PropsOptions,
@@ -270,7 +289,8 @@ export function defineComponent<
   PublicProps,
   ResolveProps<PropsOptions, E>,
   ExtractDefaultPropTypes<PropsOptions>,
-  S
+  S,
+  Attrs
 >
 
 // implementation, close to no-op

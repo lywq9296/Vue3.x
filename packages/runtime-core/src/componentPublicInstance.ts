@@ -1,6 +1,8 @@
 import {
+  AllowedComponentProps,
   ComponentInternalInstance,
   Data,
+  HasDefinedAttrs,
   getExposeProxy,
   isStatefulComponent
 } from './component'
@@ -37,7 +39,9 @@ import {
   shouldCacheAccess,
   MergedComponentOptionsOverride,
   InjectToObject,
-  ComponentInjectOptions
+  ComponentInjectOptions,
+  AttrsType,
+  UnwrapAttrsType
 } from './componentOptions'
 import { EmitsOptions, EmitFn } from './componentEmits'
 import { SlotsType, UnwrapSlotsType } from './componentSlots'
@@ -149,6 +153,7 @@ export type CreateComponentPublicInstance<
   MakeDefaultsOptional extends boolean = false,
   I extends ComponentInjectOptions = {},
   S extends SlotsType = {},
+  Attrs extends AttrsType = Record<string, unknown>,
   PublicMixin = IntersectionMixin<Mixin> & IntersectionMixin<Extends>,
   PublicP = UnwrapMixinsType<PublicMixin, 'P'> & EnsureNonVoid<P>,
   PublicB = UnwrapMixinsType<PublicMixin, 'B'> & EnsureNonVoid<B>,
@@ -182,10 +187,12 @@ export type CreateComponentPublicInstance<
     Defaults,
     {},
     string,
-    S
+    S,
+    Attrs
   >,
   I,
-  S
+  S,
+  Attrs
 >
 
 // public properties exposed on the proxy, which is used as the render context
@@ -202,14 +209,23 @@ export type ComponentPublicInstance<
   MakeDefaultsOptional extends boolean = false,
   Options = ComponentOptionsBase<any, any, any, any, any, any, any, any, any>,
   I extends ComponentInjectOptions = {},
-  S extends SlotsType = {}
+  S extends SlotsType = {},
+  Attrs extends AttrsType = Record<string, unknown>, // Attrs type extracted from attrs option
+  // AttrsProps type used for JSX validation of attrs
+  AttrsProps = HasDefinedAttrs<Attrs> extends true // if attrs is defined
+    ? Omit<UnwrapAttrsType<Attrs>, keyof (P & PublicProps)> // exclude props from attrs, for JSX validation
+    : {} // no JSX validation of attrs
 > = {
   $: ComponentInternalInstance
   $data: D
   $props: MakeDefaultsOptional extends true
-    ? Partial<Defaults> & Omit<Prettify<P> & PublicProps, keyof Defaults>
-    : Prettify<P> & PublicProps
-  $attrs: Data
+    ? Partial<Defaults> &
+        Omit<Prettify<P> & PublicProps, keyof Defaults> &
+        AttrsProps
+    : Prettify<P> & PublicProps & AttrsProps
+  $attrs: HasDefinedAttrs<Attrs> extends true
+    ? Readonly<AttrsProps & AllowedComponentProps>
+    : Data
   $refs: Data
   $slots: UnwrapSlotsType<S>
   $root: ComponentPublicInstance | null
