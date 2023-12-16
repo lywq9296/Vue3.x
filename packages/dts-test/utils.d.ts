@@ -16,6 +16,12 @@ export type IsUnion<T, U extends T = T> = (
   ? false
   : true
 
+export type IfEquals<X, Y, A = X, B = never> = (<T>() => T extends X
+  ? 1
+  : 2) extends <T>() => T extends Y ? 1 : 2
+  ? A
+  : B
+
 export type IsAny<T> = 0 extends 1 & T ? true : false
 
 export type Prettify<T> = { [K in keyof T]: T[K] } & {}

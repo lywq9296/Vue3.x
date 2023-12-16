@@ -1,4 +1,12 @@
-import { ref, readonly, shallowReadonly, Ref, reactive, markRaw } from 'vue'
+import {
+  ref,
+  readonly,
+  shallowReadonly,
+  Ref,
+  reactive,
+  markRaw,
+  computed
+} from 'vue'
 import { describe, expectType } from './utils'
 
 describe('should support DeepReadonly', () => {
@@ -89,4 +97,27 @@ describe('should unwrap Set correctly', () => {
 
   const ws2 = reactive(new WeakSet<{ wrap: Ref<number> }>())
   expectType<WeakSet<{ wrap: number }>>(ws2)
+})
+
+describe('should add readonly', () => {
+  describe('readonly ref', () => {
+    const r = reactive({ foo: readonly(ref('foo')), bar: 3 })
+    // @ts-expect-error readonly
+    r.foo = 'bar'
+    r.bar = 42
+  })
+  describe('computed ', () => {
+    // #5159
+    const r = reactive({ foo: computed(() => 'foo'), bar: 3 })
+    // @ts-expect-error readonly
+    r.foo = 'bar'
+    r.bar = 42
+  })
+
+  describe('readonly property', () => {
+    const r = reactive({} as { foo: { readonly bar: number }; bar: number })
+    // @ts-expect-error readonly
+    r.foo.bar = 2
+    r.bar = 42
+  })
 })
