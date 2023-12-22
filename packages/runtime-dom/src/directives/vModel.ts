@@ -213,6 +213,42 @@ export const vModelSelect: ModelDirective<HTMLSelectElement> = {
   }
 }
 
+export const vModelDetails: ModelDirective<HTMLDetailsElement> = {
+  created(el, _, vnode) {
+    el._assign = getModelAssigner(vnode)
+    addEventListener(el, 'toggle', () => {
+      el._assign(el.open)
+    })
+  },
+  mounted(el, { value }) {
+    el.open = value
+  },
+  beforeUpdate(el, _, vnode) {
+    el._assign = getModelAssigner(vnode)
+  },
+  updated(el, { value }) {
+    el.open = value
+  }
+}
+
+export const vModelDialog: ModelDirective<HTMLDialogElement> = {
+  created(el, _, vnode) {
+    el._assign = getModelAssigner(vnode)
+    addEventListener(el, 'close', () => {
+      el._assign(false)
+    })
+  },
+  mounted(el, { value }) {
+    el.open = value
+  },
+  beforeUpdate(el, _, vnode) {
+    el._assign = getModelAssigner(vnode)
+  },
+  updated(el, { value }) {
+    el.open = value
+  }
+}
+
 function setSelected(el: HTMLSelectElement, value: any) {
   const isMultiple = el.multiple
   if (isMultiple && !isArray(value) && !isSet(value)) {
@@ -281,6 +317,10 @@ function resolveDynamicModel(tagName: string, type: string | undefined) {
       return vModelSelect
     case 'TEXTAREA':
       return vModelText
+    case 'DETAILS':
+      return vModelDetails
+    case 'DIALOG':
+      return vModelDialog
     default:
       switch (type) {
         case 'checkbox':
