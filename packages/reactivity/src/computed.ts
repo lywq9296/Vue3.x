@@ -102,13 +102,13 @@ export class ComputedRefImpl<T> {
  * @see {@link https://vuejs.org/api/reactivity-core.html#computed}
  */
 export function computed<T>(
-  getter: ComputedGetter<T>,
-  debugOptions?: DebuggerOptions
-): ComputedRef<T>
-export function computed<T>(
   options: WritableComputedOptions<T>,
   debugOptions?: DebuggerOptions
 ): WritableComputedRef<T>
+export function computed<T>(
+  getter: ComputedGetter<T>,
+  debugOptions?: DebuggerOptions
+): ComputedRef<T>
 export function computed<T>(
   getterOrOptions: ComputedGetter<T> | WritableComputedOptions<T>,
   debugOptions?: DebuggerOptions,
