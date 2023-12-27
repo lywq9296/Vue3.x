@@ -41,12 +41,19 @@ export class ComputedRefImpl<T> {
     isReadonly: boolean,
     isSSR: boolean
   ) {
-    this.effect = new ReactiveEffect(getter, () => {
-      if (!this._dirty) {
-        this._dirty = true
-        triggerRefValue(this)
+    this.effect = new ReactiveEffect(
+      getter,
+      (deferredComputedTrigger?: boolean) => {
+        if (deferredComputedTrigger) {
+          this._dirty = true
+        }else{
+          if (!this._dirty) {
+            this._dirty = true
+          }
+          triggerRefValue(this)
+        }
       }
-    })
+    )
     this.effect.computed = this
     this.effect.active = this._cacheable = !isSSR
     this[ReactiveFlags.IS_READONLY] = isReadonly
