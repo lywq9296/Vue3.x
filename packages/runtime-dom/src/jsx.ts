@@ -1264,7 +1264,7 @@ export interface IntrinsicElementAttributes {
   view: SVGAttributes
 }
 
-export interface Events {
+export interface BaseEvents {
   // clipboard events
   onCopy: ClipboardEvent
   onCut: ClipboardEvent
@@ -1378,6 +1378,29 @@ export interface Events {
   // transition events
   onTransitionend: TransitionEvent
   onTransitionstart: TransitionEvent
+}
+
+// All possible combinations, could be generated programmatically but
+// probably too much trouble for little gain, especially it will incur more overhead on the typing
+type EventModifiers =
+  | 'Capture'
+  | 'Once'
+  | 'Passive'
+  | 'CaptureOnce'
+  | 'OnceCapture'
+  | 'CapturePassive'
+  | 'PassiveCapture'
+  | 'OncePassive'
+  | 'PassiveOnce'
+  | 'CaptureOncePassive'
+  | 'CapturePassiveOnce'
+  | 'OnceCapturePassive'
+  | 'OncePassiveCapture'
+  | 'PassiveCaptureOnce'
+  | 'PassiveOnceCapture'
+
+type Events = BaseEvents & {
+  [K in keyof BaseEvents as `${K & string}${EventModifiers}`]: BaseEvents[K]
 }
 
 type EventHandlers<E> = {
