@@ -12,6 +12,7 @@ import type {
 } from '../componentPublicInstance'
 import { getCompatChildren } from './instanceChildren'
 import {
+  type ComponentOptionsCompat,
   DeprecationTypes,
   assertCompatEnabled,
   isCompatEnabled,
@@ -37,7 +38,10 @@ import {
 import { resolveFilter } from '../helpers/resolveAssets'
 import type { InternalSlots, Slots } from '../componentSlots'
 import type { ContextualRenderFn } from '../componentRenderContext'
-import { resolveMergedOptions } from '../componentOptions'
+import {
+  type MergedComponentOptions,
+  resolveMergedOptions,
+} from '../componentOptions'
 
 export type LegacyPublicInstance = ComponentPublicInstance &
   LegacyPublicProperties
@@ -132,7 +136,10 @@ export function installCompatInstanceProperties(map: PublicPropertiesMap) {
       // inject additional properties into $options for compat
       // e.g. vuex needs this.$options.parent
       $options: i => {
-        const res = extend({}, resolveMergedOptions(i))
+        const res = extend(
+          {},
+          resolveMergedOptions(i),
+        ) as MergedComponentOptions & ComponentOptionsCompat
         res.parent = i.proxy!.$parent
         res.propsData = i.vnode.props
         return res

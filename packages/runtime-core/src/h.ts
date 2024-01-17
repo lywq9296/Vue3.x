@@ -147,9 +147,6 @@ export function h<
   children?: RawChildren | IfAny<S, RawSlots, S>,
 ): VNode
 
-// catch-all for generic component types
-export function h(type: Component, children?: RawChildren): VNode
-
 // concrete component
 export function h<P>(
   type: ConcreteComponent | string,
@@ -191,10 +188,21 @@ export function h<P>(
   children?: RawChildren | RawSlots,
 ): VNode
 
-// catch all types
-export function h(type: string | Component, children?: RawChildren): VNode
+// vnode
+export function h(type: VNode, children?: RawChildren): VNode
 export function h<P>(
-  type: string | Component<P>,
+  type: VNode<any, any, P>,
+  props?: (RawProps & P) | ({} extends P ? null : never),
+  children?: RawChildren | RawSlots,
+): VNode
+
+// catch all types
+export function h(
+  type: VNode | string | Constructor,
+  children?: RawChildren,
+): VNode
+export function h<P>(
+  type: VNode | string | Component<P>,
   props?: (RawProps & P) | ({} extends P ? null : never),
   children?: RawChildren | RawSlots,
 ): VNode

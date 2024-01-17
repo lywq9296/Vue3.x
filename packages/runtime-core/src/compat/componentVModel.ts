@@ -1,9 +1,10 @@
 import { ShapeFlags, extend } from '@vue/shared'
-import type { ComponentInternalInstance, ComponentOptions } from '../component'
+import type { ComponentInternalInstance } from '../component'
 import { ErrorCodes, callWithErrorHandling } from '../errorHandling'
 import type { VNode } from '../vnode'
 import { popWarningContext, pushWarningContext } from '../warning'
 import {
+  type ComponentOptionsCompat,
   DeprecationTypes,
   isCompatEnabled,
   warnDeprecation,
@@ -15,7 +16,7 @@ const warnedTypes = new WeakSet()
 
 export function convertLegacyVModelProps(vnode: VNode) {
   const { type, shapeFlag, props, dynamicProps } = vnode
-  const comp = type as ComponentOptions
+  const comp = type as ComponentOptionsCompat
   if (shapeFlag & ShapeFlags.COMPONENT && props && 'modelValue' in props) {
     if (
       !isCompatEnabled(
@@ -55,7 +56,7 @@ export function convertLegacyVModelProps(vnode: VNode) {
   }
 }
 
-function applyModelFromMixins(model: any, mixins?: ComponentOptions[]) {
+function applyModelFromMixins(model: any, mixins?: ComponentOptionsCompat[]) {
   if (mixins) {
     mixins.forEach(m => {
       if (m.model) extend(model, m.model)

@@ -37,7 +37,11 @@ import { isEmitListener } from './componentEmits'
 import { InternalObjectKey } from './vnode'
 import type { AppContext } from './apiCreateApp'
 import { createPropsDefaultThis } from './compat/props'
-import { isCompatEnabled, softAssertCompatEnabled } from './compat/compatConfig'
+import {
+  type ComponentOptionsCompat,
+  isCompatEnabled,
+  softAssertCompatEnabled,
+} from './compat/compatConfig'
 import { DeprecationTypes } from './compat/compatConfig'
 import { shouldSkipAttr } from './compat/attrsFallthrough'
 
@@ -48,7 +52,6 @@ export type ComponentPropsOptions<P = Data> =
 export type ComponentObjectPropsOptions<P = Data> = {
   [K in keyof P]: Prop<P[K]> | null
 }
-
 export type Prop<T, D = T> = PropOptions<T, D> | PropType<T>
 
 type DefaultFactory<T> = (props: Data) => T | null | undefined
@@ -68,11 +71,14 @@ export interface PropOptions<T = any, D = T> {
   skipFactory?: boolean
 }
 
-export type PropType<T> = PropConstructor<T> | PropConstructor<T>[]
+export type PropType<T> =
+  | PropConstructor<T>
+  | null
+  | Array<PropConstructor<T> | null>
 
 type PropConstructor<T = any> =
   | { new (...args: any[]): T & {} }
-  | { (): T }
+  | { (v?: any): T }
   | PropMethod<T>
 
 type PropMethod<T, TConstructor = any> = [T] extends [
@@ -94,7 +100,7 @@ type RequiredKeys<T> = {
     : never
 }[keyof T]
 
-type OptionalKeys<T> = Exclude<keyof T, RequiredKeys<T>>
+// type OptionalKeys<T> = Exclude<keyof T, RequiredKeys<T>>
 
 type DefaultKeys<T> = {
   [K in keyof T]: T[K] extends
@@ -138,13 +144,9 @@ type InferPropType<T> = [T] extends [null]
  * To extract accepted props from the parent, use {@link ExtractPublicPropTypes}.
  */
 export type ExtractPropTypes<O> = {
-  // use `keyof Pick<O, RequiredKeys<O>>` instead of `RequiredKeys<O>` to
-  // support IDE features
-  [K in keyof Pick<O, RequiredKeys<O>>]: InferPropType<O[K]>
-} & {
-  // use `keyof Pick<O, OptionalKeys<O>>` instead of `OptionalKeys<O>` to
-  // support IDE features
-  [K in keyof Pick<O, OptionalKeys<O>>]?: InferPropType<O[K]>
+  [K in keyof O]:
+    | InferPropType<O[K]>
+    | (K extends RequiredKeys<O> ? never : undefined)
 }
 
 type PublicRequiredKeys<T> = {
@@ -170,7 +172,7 @@ enum BooleanFlags {
 }
 
 // extract props which defined with default from prop options
-export type ExtractDefaultPropTypes<O> = O extends object
+export type ExtractDefaultPropTypes<O> = [O] extends [object]
   ? // use `keyof Pick<O, DefaultKeys<O>>` instead of `DefaultKeys<O>` to support IDE features
     { [K in keyof Pick<O, DefaultKeys<O>>]: InferPropType<O[K]> }
   : {}
@@ -509,7 +511,7 @@ export function normalizePropsOptions(
     return cached
   }
 
-  const raw = comp.props
+  const raw = comp.props as Record<string, any> | Array<string>
   const normalized: NormalizedPropsOptions[0] = {}
   const needCastKeys: NormalizedPropsOptions[1] = []
 
@@ -518,7 +520,7 @@ export function normalizePropsOptions(
   if (__FEATURE_OPTIONS_API__ && !isFunction(comp)) {
     const extendProps = (raw: ComponentOptions) => {
       if (__COMPAT__ && isFunction(raw)) {
-        raw = raw.options
+        raw = (raw as ComponentOptionsCompat).options
       }
       hasExtends = true
       const [props, keys] = normalizePropsOptions(raw, appContext, true)
@@ -694,7 +696,10 @@ type AssertionResult = {
 /**
  * dev only
  */
-function assertType(value: unknown, type: PropConstructor): AssertionResult {
+function assertType(
+  value: unknown,
+  type: PropConstructor | null,
+): AssertionResult {
   let valid
   const expectedType = getType(type)
   if (isSimpleType(expectedType)) {
@@ -702,7 +707,7 @@ function assertType(value: unknown, type: PropConstructor): AssertionResult {
     valid = t === expectedType.toLowerCase()
     // for primitive wrapper objects
     if (!valid && t === 'object') {
-      valid = value instanceof type
+      valid = value instanceof type!
     }
   } else if (expectedType === 'Object') {
     valid = isObject(value)
@@ -711,7 +716,7 @@ function assertType(value: unknown, type: PropConstructor): AssertionResult {
   } else if (expectedType === 'null') {
     valid = value === null
   } else {
-    valid = value instanceof type
+    valid = value instanceof type!
   }
   return {
     valid,

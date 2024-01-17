@@ -185,6 +185,9 @@ declare module '@vue/reactivity' {
   }
 }
 
+export type * from './componentTypeHelpers'
+export type { LooseRequired, LooseOptional } from '@vue/shared'
+
 export { TrackOpTypes, TriggerOpTypes } from '@vue/reactivity'
 export type {
   Ref,
@@ -248,9 +251,12 @@ export type {
   SetupContext,
   ComponentCustomProps,
   AllowedComponentProps,
-  ComponentInstance,
 } from './component'
-export type { DefineComponent, PublicProps } from './apiDefineComponent'
+export type {
+  DefineComponent,
+  DefineComponentOptions,
+  PublicProps,
+} from './apiDefineComponent'
 export type {
   ComponentOptions,
   ComponentOptionsMixin,
@@ -266,7 +272,11 @@ export type {
   RuntimeCompilerOptions,
   ComponentInjectOptions,
 } from './componentOptions'
-export type { EmitsOptions, ObjectEmitsOptions } from './componentEmits'
+export type {
+  EmitsOptions,
+  ObjectEmitsOptions,
+  EmitsToProps,
+} from './componentEmits'
 export type {
   ComponentPublicInstance,
   ComponentCustomProperties,

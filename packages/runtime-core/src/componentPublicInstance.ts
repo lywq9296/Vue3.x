@@ -13,6 +13,7 @@ import {
 import {
   EMPTY_OBJ,
   type IfAny,
+  type LooseOptional,
   NOOP,
   type Prettify,
   type UnionToIntersection,
@@ -126,13 +127,27 @@ export type ComponentPublicInstanceConstructor<
     RawBindings,
     D,
     C,
-    M
+    M,
+    E,
+    PublicProps,
+    Defaults,
+    MakeDefaultsOptional,
+    Options,
+    I,
+    S
   > = ComponentPublicInstance<any>,
   Props = any,
   RawBindings = any,
   D = any,
   C extends ComputedOptions = ComputedOptions,
   M extends MethodOptions = MethodOptions,
+  E extends EmitsOptions = {},
+  PublicProps = {},
+  Defaults = {},
+  MakeDefaultsOptional extends boolean = false,
+  Options = ComponentOptionsBase<any, any, any, any, any, any, any, any, any>,
+  I extends ComponentInjectOptions = {},
+  S extends SlotsType = {},
 > = {
   __isFragment?: never
   __isTeleport?: never
@@ -154,6 +169,21 @@ export type CreateComponentPublicInstance<
   MakeDefaultsOptional extends boolean = false,
   I extends ComponentInjectOptions = {},
   S extends SlotsType = {},
+  Options = ComponentOptionsBase<
+    P,
+    B,
+    D,
+    C,
+    M,
+    Mixin,
+    Extends,
+    E,
+    string,
+    Defaults,
+    {},
+    string,
+    S
+  >,
   PublicMixin = IntersectionMixin<Mixin> & IntersectionMixin<Extends>,
   PublicP = UnwrapMixinsType<PublicMixin, 'P'> & EnsureNonVoid<P>,
   PublicB = UnwrapMixinsType<PublicMixin, 'B'> & EnsureNonVoid<B>,
@@ -174,24 +204,26 @@ export type CreateComponentPublicInstance<
   PublicProps,
   PublicDefaults,
   MakeDefaultsOptional,
-  ComponentOptionsBase<
-    P,
-    B,
-    D,
-    C,
-    M,
-    Mixin,
-    Extends,
-    E,
-    string,
-    Defaults,
-    {},
-    string,
-    S
-  >,
+  Options,
   I,
   S
 >
+/**
+ * Resolves props
+ */
+export type ComponentPropsWithDefault<
+  P,
+  Defaults,
+  PublicProps,
+  MakeDefaultsOptional extends boolean = false,
+> = MakeDefaultsOptional extends true
+  ? LooseOptional<P> extends infer OptionalProps
+    ? Omit<Prettify<P> & PublicProps, keyof Defaults | keyof OptionalProps> &
+        Omit<OptionalProps, keyof Defaults> &
+        Partial<Defaults>
+    : Partial<Defaults> & Omit<Prettify<P> & PublicProps, keyof Defaults>
+  : Prettify<P> & PublicProps
+
 // public properties exposed on the proxy, which is used as the render context
 // in templates (as `this` in the render option)
 export type ComponentPublicInstance<
@@ -204,15 +236,18 @@ export type ComponentPublicInstance<
   PublicProps = P,
   Defaults = {},
   MakeDefaultsOptional extends boolean = false,
-  Options = ComponentOptionsBase<any, any, any, any, any, any, any, any, any>,
+  Options = any,
   I extends ComponentInjectOptions = {},
   S extends SlotsType = {},
 > = {
   $: ComponentInternalInstance
   $data: D
-  $props: MakeDefaultsOptional extends true
-    ? Partial<Defaults> & Omit<Prettify<P> & PublicProps, keyof Defaults>
-    : Prettify<P> & PublicProps
+  $props: ComponentPropsWithDefault<
+    P,
+    Defaults,
+    PublicProps,
+    MakeDefaultsOptional
+  >
   $attrs: Data
   $refs: Data
   $slots: UnwrapSlotsType<S>
@@ -220,7 +255,7 @@ export type ComponentPublicInstance<
   $parent: ComponentPublicInstance | null
   $emit: EmitFn<E>
   $el: any
-  $options: Options & MergedComponentOptionsOverride
+  $options: Options & Record<string, any> & MergedComponentOptionsOverride
   $forceUpdate: () => void
   $nextTick: typeof nextTick
   $watch<T extends string | ((...args: any) => any)>(

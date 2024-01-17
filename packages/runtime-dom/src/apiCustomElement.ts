@@ -1,21 +1,17 @@
 import {
   type ComponentInjectOptions,
   type ComponentInternalInstance,
+  type ComponentObjectPropsOptions,
   type ComponentOptions,
   type ComponentOptionsMixin,
-  type ComponentOptionsWithArrayProps,
-  type ComponentOptionsWithObjectProps,
-  type ComponentOptionsWithoutProps,
-  type ComponentPropsOptions,
   type ComputedOptions,
   type ConcreteComponent,
   type DefineComponent,
+  type DefineComponentOptions,
   type EmitsOptions,
   type ExtractPropTypes,
   type MethodOptions,
-  type RenderFunction,
   type RootHydrateFunction,
-  type SetupContext,
   type SlotsType,
   type VNode,
   createVNode,
@@ -33,30 +29,28 @@ export type VueElementConstructor<P = {}> = {
 // defineCustomElement provides the same type inference as defineComponent
 // so most of the following overloads should be kept in sync w/ defineComponent.
 
-// overload 1: direct setup function
-export function defineCustomElement<Props, RawBindings = object>(
-  setup: (
-    props: Readonly<Props>,
-    ctx: SetupContext,
-  ) => RawBindings | RenderFunction,
-): VueElementConstructor<Props>
+// overload 1: defining a custom element from the returned value of
+export function defineCustomElement<P>(
+  options: DefineComponent<P, any, any, any>,
+): VueElementConstructor<ExtractPropTypes<P>>
 
-// overload 2: object format with no props
+// overload 2: defining with options
 export function defineCustomElement<
-  Props = {},
+  Props = undefined,
   RawBindings = {},
   D = {},
   C extends ComputedOptions = {},
   M extends MethodOptions = {},
   Mixin extends ComponentOptionsMixin = ComponentOptionsMixin,
   Extends extends ComponentOptionsMixin = ComponentOptionsMixin,
-  E extends EmitsOptions = EmitsOptions,
+  E extends EmitsOptions = {},
   EE extends string = string,
   I extends ComponentInjectOptions = {},
   II extends string = string,
   S extends SlotsType = {},
+  Options extends Record<PropertyKey, any> = {},
 >(
-  options: ComponentOptionsWithoutProps<
+  options: DefineComponentOptions<
     Props,
     RawBindings,
     D,
@@ -68,77 +62,23 @@ export function defineCustomElement<
     EE,
     I,
     II,
-    S
+    S,
+    Options
   > & { styles?: string[] },
-): VueElementConstructor<Props>
+): VueElementConstructor<
+  [Props] extends [string]
+    ? { [key in Props]?: any }
+    : undefined extends Props
+      ? {}
+      : Props extends never[]
+        ? string[]
+        : ExtractPropTypes<Props>
+>
 
-// overload 3: object format with array props declaration
-export function defineCustomElement<
-  PropNames extends string,
-  RawBindings,
-  D,
-  C extends ComputedOptions = {},
-  M extends MethodOptions = {},
-  Mixin extends ComponentOptionsMixin = ComponentOptionsMixin,
-  Extends extends ComponentOptionsMixin = ComponentOptionsMixin,
-  E extends EmitsOptions = Record<string, any>,
-  EE extends string = string,
-  I extends ComponentInjectOptions = {},
-  II extends string = string,
-  S extends SlotsType = {},
->(
-  options: ComponentOptionsWithArrayProps<
-    PropNames,
-    RawBindings,
-    D,
-    C,
-    M,
-    Mixin,
-    Extends,
-    E,
-    EE,
-    I,
-    II,
-    S
-  > & { styles?: string[] },
-): VueElementConstructor<{ [K in PropNames]: any }>
-
-// overload 4: object format with object props declaration
-export function defineCustomElement<
-  PropsOptions extends Readonly<ComponentPropsOptions>,
-  RawBindings,
-  D,
-  C extends ComputedOptions = {},
-  M extends MethodOptions = {},
-  Mixin extends ComponentOptionsMixin = ComponentOptionsMixin,
-  Extends extends ComponentOptionsMixin = ComponentOptionsMixin,
-  E extends EmitsOptions = Record<string, any>,
-  EE extends string = string,
-  I extends ComponentInjectOptions = {},
-  II extends string = string,
-  S extends SlotsType = {},
->(
-  options: ComponentOptionsWithObjectProps<
-    PropsOptions,
-    RawBindings,
-    D,
-    C,
-    M,
-    Mixin,
-    Extends,
-    E,
-    EE,
-    I,
-    II,
-    S
-  > & { styles?: string[] },
-): VueElementConstructor<ExtractPropTypes<PropsOptions>>
-
-// overload 5: defining a custom element from the returned value of
-// `defineComponent`
-export function defineCustomElement<P>(
-  options: DefineComponent<P, any, any, any>,
-): VueElementConstructor<ExtractPropTypes<P>>
+// overload 3: just Rendered component
+export function defineCustomElement<P>(options: {
+  new (): { $props: P }
+}): VueElementConstructor<P>
 
 /*! #__NO_SIDE_EFFECTS__ */
 export function defineCustomElement(
@@ -166,7 +106,7 @@ const BaseClass = (
   typeof HTMLElement !== 'undefined' ? HTMLElement : class {}
 ) as typeof HTMLElement
 
-type InnerComponentDef = ConcreteComponent & { styles?: string[] }
+type InnerComponentDef = ConcreteComponent<any> & { styles?: string[] }
 
 export class VueElement extends BaseClass {
   /**
@@ -254,8 +194,12 @@ export class VueElement extends BaseClass {
       let numberProps
       if (props && !isArray(props)) {
         for (const key in props) {
-          const opt = props[key]
-          if (opt === Number || (opt && opt.type === Number)) {
+          // isArray does not exclude `readonly string[]` type
+          const opt = (props as ComponentObjectPropsOptions)[key]
+          if (
+            opt === Number ||
+            (opt && (opt as Record<string, any>).type === Number)
+          ) {
             if (key in this._props) {
               this._props[key] = toNumber(this._props[key])
             }

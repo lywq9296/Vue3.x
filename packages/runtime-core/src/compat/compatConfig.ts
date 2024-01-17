@@ -10,6 +10,21 @@ import {
 } from '../component'
 import { warn } from '../warning'
 
+export interface ComponentOptionsCompat extends ComponentOptions {
+  [K: string]: any
+
+  model?: any
+  el?: any
+
+  _base?: any
+  options?: any
+
+  propsData?: any
+  parent?: any
+
+  __isBuildIn?: boolean
+}
+
 export enum DeprecationTypes {
   GLOBAL_MOUNT = 'GLOBAL_MOUNT',
   GLOBAL_MOUNT_CONTAINER = 'GLOBAL_MOUNT_CONTAINER',

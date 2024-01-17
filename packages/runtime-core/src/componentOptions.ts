@@ -67,7 +67,10 @@ import { warn } from './warning'
 import type { VNodeChild } from './vnode'
 import { callWithAsyncErrorHandling } from './errorHandling'
 import { deepMergeData } from './compat/data'
-import { DeprecationTypes } from './compat/compatConfig'
+import {
+  type ComponentOptionsCompat,
+  DeprecationTypes,
+} from './compat/compatConfig'
 import {
   type CompatConfig,
   isCompatEnabled,
@@ -219,31 +222,34 @@ export type ComponentOptionsWithoutProps<
   M extends MethodOptions = {},
   Mixin extends ComponentOptionsMixin = ComponentOptionsMixin,
   Extends extends ComponentOptionsMixin = ComponentOptionsMixin,
-  E extends EmitsOptions = EmitsOptions,
+  E extends EmitsOptions = {},
   EE extends string = string,
   I extends ComponentInjectOptions = {},
   II extends string = string,
   S extends SlotsType = {},
   PE = Props & EmitsToProps<E>,
-> = ComponentOptionsBase<
-  PE,
-  RawBindings,
-  D,
-  C,
-  M,
-  Mixin,
-  Extends,
-  E,
-  EE,
-  {},
-  I,
-  II,
-  S
-> & {
-  props?: undefined
-} & ThisType<
+  Options = {},
+> = Record<string, any> &
+  (ComponentOptionsBase<
+    PE,
+    RawBindings,
+    D,
+    C,
+    M,
+    Mixin,
+    Extends,
+    E,
+    EE,
+    {},
+    I,
+    II,
+    S
+  > & {
+    props?: undefined
+  }) &
+  ThisType<
     CreateComponentPublicInstance<
-      PE,
+      EmitsToProps<E>,
       RawBindings,
       D,
       C,
@@ -251,11 +257,12 @@ export type ComponentOptionsWithoutProps<
       Mixin,
       Extends,
       E,
-      PE,
+      EmitsToProps<E>,
       {},
       false,
       I,
-      S
+      S,
+      Options
     >
   >
 
@@ -267,29 +274,33 @@ export type ComponentOptionsWithArrayProps<
   M extends MethodOptions = {},
   Mixin extends ComponentOptionsMixin = ComponentOptionsMixin,
   Extends extends ComponentOptionsMixin = ComponentOptionsMixin,
-  E extends EmitsOptions = EmitsOptions,
+  E extends EmitsOptions = {},
   EE extends string = string,
   I extends ComponentInjectOptions = {},
   II extends string = string,
   S extends SlotsType = {},
   Props = Prettify<Readonly<{ [key in PropNames]?: any } & EmitsToProps<E>>>,
-> = ComponentOptionsBase<
-  Props,
-  RawBindings,
-  D,
-  C,
-  M,
-  Mixin,
-  Extends,
-  E,
-  EE,
-  {},
-  I,
-  II,
-  S
-> & {
-  props: PropNames[]
-} & ThisType<
+> = Record<string, any> &
+  Omit<
+    ComponentOptionsBase<
+      Props,
+      RawBindings,
+      D,
+      C,
+      M,
+      Mixin,
+      Extends,
+      E,
+      EE,
+      {},
+      I,
+      II,
+      S
+    >,
+    'props'
+  > & {
+    props: PropNames[]
+  } & ThisType<
     CreateComponentPublicInstance<
       Props,
       RawBindings,
@@ -308,37 +319,40 @@ export type ComponentOptionsWithArrayProps<
   >
 
 export type ComponentOptionsWithObjectProps<
-  PropsOptions = ComponentObjectPropsOptions,
+  PropsOptions = {},
   RawBindings = {},
   D = {},
   C extends ComputedOptions = {},
   M extends MethodOptions = {},
   Mixin extends ComponentOptionsMixin = ComponentOptionsMixin,
   Extends extends ComponentOptionsMixin = ComponentOptionsMixin,
-  E extends EmitsOptions = EmitsOptions,
+  E extends EmitsOptions = {},
   EE extends string = string,
   I extends ComponentInjectOptions = {},
   II extends string = string,
   S extends SlotsType = {},
-  Props = Prettify<Readonly<ExtractPropTypes<PropsOptions> & EmitsToProps<E>>>,
+  Props = {} extends PropsOptions
+    ? Prettify<EmitsToProps<E>>
+    : Prettify<Readonly<ExtractPropTypes<PropsOptions> & EmitsToProps<E>>>,
   Defaults = ExtractDefaultPropTypes<PropsOptions>,
-> = ComponentOptionsBase<
-  Props,
-  RawBindings,
-  D,
-  C,
-  M,
-  Mixin,
-  Extends,
-  E,
-  EE,
-  Defaults,
-  I,
-  II,
-  S
-> & {
-  props: PropsOptions & ThisType<void>
-} & ThisType<
+> = Record<string, any> &
+  ComponentOptionsBase<
+    Props,
+    RawBindings,
+    D,
+    C,
+    M,
+    Mixin,
+    Extends,
+    E,
+    EE,
+    Defaults,
+    I,
+    II,
+    S
+  > & {
+    props: PropsOptions & ThisType<PropsOptions>
+  } & ThisType<
     CreateComponentPublicInstance<
       Props,
       RawBindings,
@@ -357,27 +371,32 @@ export type ComponentOptionsWithObjectProps<
   >
 
 export type ComponentOptions<
-  Props = {},
+  Props = Record<string, any>,
   RawBindings = any,
   D = any,
   C extends ComputedOptions = any,
   M extends MethodOptions = any,
   Mixin extends ComponentOptionsMixin = any,
   Extends extends ComponentOptionsMixin = any,
-  E extends EmitsOptions = any,
+  E extends EmitsOptions = {},
+  I extends ComponentInjectOptions = {},
   S extends SlotsType = any,
-> = ComponentOptionsBase<
-  Props,
-  RawBindings,
-  D,
-  C,
-  M,
-  Mixin,
-  Extends,
-  E,
-  string,
-  S
-> &
+> = Record<string, any> &
+  ComponentOptionsBase<
+    Props,
+    RawBindings,
+    D,
+    C,
+    M,
+    Mixin,
+    Extends,
+    E,
+    string,
+    {},
+    I,
+    string,
+    S
+  > &
   ThisType<
     CreateComponentPublicInstance<
       {},
@@ -388,11 +407,17 @@ export type ComponentOptions<
       Mixin,
       Extends,
       E,
-      Readonly<Props>
+      Readonly<Props>,
+      {},
+      false,
+      I,
+      S
     >
   >
 
 export type ComponentOptionsMixin = ComponentOptionsBase<
+  any,
+  any,
   any,
   any,
   any,
@@ -466,9 +491,10 @@ interface LegacyOptions<
   II extends string,
 > {
   compatConfig?: CompatConfig
-
-  // allow any custom options
-  [key: string]: any
+  props?:
+    | ComponentPropsOptions
+    | Readonly<ComponentPropsOptions>
+    | ComponentObjectPropsOptions
 
   // state
   // Limitation: we cannot expose RawBindings on the `this` context for data
@@ -984,7 +1010,7 @@ export function resolveMergedOptions(
   } = instance.appContext
   const cached = cache.get(base)
 
-  let resolved: MergedComponentOptions
+  let resolved: MergedComponentOptions & ComponentOptionsCompat
 
   if (cached) {
     resolved = cached
@@ -993,7 +1019,8 @@ export function resolveMergedOptions(
       __COMPAT__ &&
       isCompatEnabled(DeprecationTypes.PRIVATE_APIS, instance)
     ) {
-      resolved = extend({}, base) as MergedComponentOptions
+      resolved = extend({}, base) as ComponentOptionsCompat
+
       resolved.parent = instance.parent && instance.parent.proxy
       resolved.propsData = instance.vnode.props
     } else {

@@ -27,7 +27,6 @@ import type {
 } from '../apiCreateApp'
 import {
   type Component,
-  type ComponentOptions,
   createComponentInstance,
   finishComponentSetup,
   isRuntimeOnly,
@@ -50,6 +49,7 @@ import {
 } from './globalConfig'
 import type { LegacyDirective } from './customDirective'
 import {
+  type ComponentOptionsCompat,
   DeprecationTypes,
   assertCompatEnabled,
   configureCompat,
@@ -70,7 +70,7 @@ export type CompatVue = Pick<App, 'version' | 'component' | 'directive'> & {
   // no inference here since these types are not meant for actual use - they
   // are merely here to provide type checks for internal implementation and
   // information for migration.
-  new (options?: ComponentOptions): LegacyPublicInstance
+  new (options?: ComponentOptionsCompat): LegacyPublicInstance
 
   version: string
   config: AppConfig & LegacyConfig
@@ -78,7 +78,7 @@ export type CompatVue = Pick<App, 'version' | 'component' | 'directive'> & {
   nextTick: typeof nextTick
 
   use(plugin: Plugin, ...options: any[]): CompatVue
-  mixin(mixin: ComponentOptions): CompatVue
+  mixin(mixin: ComponentOptionsCompat): CompatVue
 
   component(name: string): Component | undefined
   component(name: string, component: Component): CompatVue
@@ -93,7 +93,7 @@ export type CompatVue = Pick<App, 'version' | 'component' | 'directive'> & {
   /**
    * @deprecated Vue 3 no longer supports extending constructors.
    */
-  extend: (options?: ComponentOptions) => CompatVue
+  extend: (options?: ComponentOptionsCompat) => CompatVue
   /**
    * @deprecated Vue 3 no longer needs set() for adding new properties.
    */
@@ -117,7 +117,7 @@ export type CompatVue = Pick<App, 'version' | 'component' | 'directive'> & {
   /**
    * @internal
    */
-  options: ComponentOptions
+  options: ComponentOptionsCompat
   /**
    * @internal
    */
@@ -142,12 +142,12 @@ export function createCompatVue(
   singletonApp = createSingletonApp({})
 
   const Vue: CompatVue = (singletonCtor = function Vue(
-    options: ComponentOptions = {},
+    options: ComponentOptionsCompat = {},
   ) {
     return createCompatApp(options, Vue)
   } as any)
 
-  function createCompatApp(options: ComponentOptions = {}, Ctor: any) {
+  function createCompatApp(options: ComponentOptionsCompat = {}, Ctor: any) {
     assertCompatEnabled(DeprecationTypes.GLOBAL_MOUNT, null)
 
     const { data } = options
@@ -217,7 +217,7 @@ export function createCompatVue(
 
   const extendCache = new WeakMap()
 
-  function extendCtor(this: any, extendOptions: ComponentOptions = {}) {
+  function extendCtor(this: any, extendOptions: ComponentOptionsCompat = {}) {
     assertCompatEnabled(DeprecationTypes.GLOBAL_EXTEND, null)
     if (isFunction(extendOptions)) {
       extendOptions = extendOptions.options
@@ -228,7 +228,7 @@ export function createCompatVue(
     }
 
     const Super = this
-    function SubVue(inlineOptions?: ComponentOptions) {
+    function SubVue(inlineOptions?: ComponentOptionsCompat) {
       if (!inlineOptions) {
         return createCompatApp(SubVue.options, SubVue)
       } else {
@@ -457,7 +457,7 @@ function installCompatMount(
    * mounting it, which is no longer possible in Vue 3 - this internal
    * function simulates that behavior.
    */
-  app._createRoot = options => {
+  app._createRoot = (options: ComponentOptionsCompat) => {
     const component = app._component
     const vnode = createVNode(component, options.propsData || null)
     vnode.appContext = context
@@ -539,7 +539,7 @@ function installCompatMount(
           }
         }
         instance.render = null
-        ;(component as ComponentOptions).template = container.innerHTML
+        ;(component as ComponentOptionsCompat).template = container.innerHTML
         finishComponentSetup(instance, false, true /* skip options */)
       }
 

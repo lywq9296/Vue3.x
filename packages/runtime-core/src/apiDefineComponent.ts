@@ -3,9 +3,6 @@ import type {
   ComponentOptions,
   ComponentOptionsBase,
   ComponentOptionsMixin,
-  ComponentOptionsWithArrayProps,
-  ComponentOptionsWithObjectProps,
-  ComponentOptionsWithoutProps,
   ComputedOptions,
   MethodOptions,
   RenderFunction,
@@ -17,7 +14,6 @@ import type {
 } from './component'
 import type {
   ComponentObjectPropsOptions,
-  ComponentPropsOptions,
   ExtractDefaultPropTypes,
   ExtractPropTypes,
 } from './componentProps'
@@ -34,27 +30,42 @@ export type PublicProps = VNodeProps &
   AllowedComponentProps &
   ComponentCustomProps
 
-type ResolveProps<PropsOrPropOptions, E extends EmitsOptions> = Readonly<
-  PropsOrPropOptions extends ComponentPropsOptions
-    ? ExtractPropTypes<PropsOrPropOptions>
-    : PropsOrPropOptions
-> &
-  ({} extends E ? {} : EmitsToProps<E>)
+export type ResolveProps<Props, E extends EmitsOptions> = Readonly<
+  ([Props] extends [string]
+    ? { [key in Props]?: any }
+    : [Props] extends [ComponentObjectPropsOptions]
+      ? ExtractPropTypes<Props>
+      : Props extends never[]
+        ? {}
+        : [Props] extends [string[]]
+          ? { [key: string]: any }
+          : [Props] extends [never]
+            ? {}
+            : [Props] extends [undefined]
+              ? {}
+              : Props) &
+    ({} extends E ? {} : EmitsToProps<E>)
+>
+
+export declare const RawOptionsSymbol: '__rawOptions'
 
 export type DefineComponent<
-  PropsOrPropOptions = {},
-  RawBindings = {},
-  D = {},
+  PropsOrPropOptions = any,
+  RawBindings = any,
+  D = any,
   C extends ComputedOptions = ComputedOptions,
   M extends MethodOptions = MethodOptions,
-  Mixin extends ComponentOptionsMixin = ComponentOptionsMixin,
-  Extends extends ComponentOptionsMixin = ComponentOptionsMixin,
+  Mixin extends ComponentOptionsMixin = {},
+  Extends extends ComponentOptionsMixin = {},
   E extends EmitsOptions = {},
   EE extends string = string,
   PP = PublicProps,
   Props = ResolveProps<PropsOrPropOptions, E>,
   Defaults = ExtractDefaultPropTypes<PropsOrPropOptions>,
-  S extends SlotsType = {},
+  I extends ComponentInjectOptions = any,
+  II extends string = string,
+  S extends SlotsType = any,
+  Options extends Record<PropertyKey, any> = {},
 > = ComponentPublicInstanceConstructor<
   CreateComponentPublicInstance<
     Props,
@@ -68,26 +79,194 @@ export type DefineComponent<
     PP & Props,
     Defaults,
     true,
-    {},
-    S
+    I,
+    S,
+    Options
   >
 > &
-  ComponentOptionsBase<
-    Props,
-    RawBindings,
-    D,
-    C,
-    M,
-    Mixin,
-    Extends,
-    E,
-    EE,
-    Defaults,
-    {},
-    string,
-    S
+  Omit<
+    ComponentOptionsBase<
+      Props,
+      RawBindings,
+      D,
+      C,
+      M,
+      Mixin,
+      Extends,
+      E,
+      EE,
+      Defaults,
+      I,
+      II,
+      S
+    >,
+    'props' | 'emits'
   > &
-  PP
+  Omit<Options, 'emits' | 'mixins' | 'extends'> & {
+    // Emits needs to be ignored and then re-added, otherwise
+    // the EE (string) of the emits will be inferred along side of the Object based
+    // causing the returned type to be incorrect.
+    emits: Options['emits']
+    // There's a test failing when extends is not re-added
+    extends: Options['extends']
+  } & {
+    [RawOptionsSymbol]: Options
+  }
+
+type BuildComponentInstance<
+  MakeDefaultsOptional extends boolean = false,
+  Props = never,
+  RawBindings = {},
+  D = {},
+  C extends ComputedOptions = {},
+  M extends MethodOptions = {},
+  Mixin extends ComponentOptionsMixin = {},
+  Extends extends ComponentOptionsMixin = {},
+  E extends EmitsOptions = {},
+  I extends ComponentInjectOptions = {},
+  S extends SlotsType = {},
+  Defaults extends Record<string, any> = {},
+  Options = {},
+> = CreateComponentPublicInstance<
+  Props,
+  RawBindings,
+  D,
+  C,
+  M,
+  Mixin,
+  Extends,
+  E,
+  Props,
+  Defaults,
+  MakeDefaultsOptional,
+  I,
+  S,
+  Options
+>
+
+type NamedProps<PropNames> = [PropNames] extends [string]
+  ? PropNames[]
+  : PropNames extends string[]
+    ? PropNames
+    : PropNames extends never[]
+      ? PropNames
+      : never
+type OptionProps<Props> = [Props] extends [ComponentObjectPropsOptions]
+  ? Props
+  : never
+
+export type DefineComponentOptions<
+  Props = never,
+  RawBindings = {},
+  D = {},
+  C extends ComputedOptions = {},
+  M extends MethodOptions = {},
+  Mixin extends ComponentOptionsMixin = {},
+  Extends extends ComponentOptionsMixin = {},
+  E extends EmitsOptions = {},
+  EE extends string = string,
+  I extends ComponentInjectOptions = {},
+  II extends string = string,
+  S extends SlotsType = {},
+  Options extends {} = {},
+  PrettyProps = Readonly<
+    ExtractPropTypes<
+      [Props] extends [string]
+        ? { [K in Props]: any }
+        : [Props] extends [string[]]
+          ? { [K in string]: any }
+          : [Props] extends [never]
+            ? {}
+            : [Props] extends [undefined]
+              ? {}
+              : [Props] extends [never[]]
+                ? {}
+                : Props
+    > &
+      EmitsToProps<E>
+  >,
+> =
+  | (Options & {
+      props?: NamedProps<Props> | OptionProps<Props> | undefined
+    } & Omit<
+        ComponentOptionsBase<
+          PrettyProps,
+          RawBindings,
+          D,
+          C,
+          M,
+          Mixin,
+          Extends,
+          E,
+          EE,
+          {},
+          I,
+          II,
+          S
+        >,
+        'props' | 'render'
+      > &
+      ThisType<
+        BuildComponentInstance<
+          false,
+          PrettyProps,
+          RawBindings,
+          D,
+          C,
+          M,
+          Mixin,
+          Extends,
+          E,
+          I,
+          S,
+          ExtractPropTypes<Props>,
+          Options
+        >
+      >)
+  | (((
+      props: Props,
+      ctx: SetupContext<E, S>,
+    ) => RenderFunction | Promise<RenderFunction>) &
+      Options)
+
+export type DefineComponentFromOptions<
+  Props = never,
+  RawBindings = {},
+  D = {},
+  C extends ComputedOptions = {},
+  M extends MethodOptions = {},
+  Mixin extends ComponentOptionsMixin = {},
+  Extends extends ComponentOptionsMixin = {},
+  E extends EmitsOptions = {},
+  EE extends string = string,
+  I extends ComponentInjectOptions = {},
+  II extends string = string,
+  S extends SlotsType = {},
+  Options extends Record<PropertyKey, any> = {},
+> = DefineComponent<
+  [Props] extends [string]
+    ? Props[]
+    : undefined extends Props
+      ? {}
+      : Props extends never[]
+        ? string[]
+        : Props,
+  RawBindings,
+  D,
+  C,
+  M,
+  Mixin,
+  Extends,
+  E,
+  EE,
+  PublicProps,
+  ResolveProps<Props, E>,
+  ExtractDefaultPropTypes<Props>,
+  I,
+  II,
+  S,
+  Options
+>
 
 // defineComponent is a utility that is primarily used for type inference
 // when declaring components. Type inference is provided in the component
@@ -95,7 +274,6 @@ export type DefineComponent<
 // for TSX / manual render function / IDE support.
 
 // overload 1: direct setup function
-// (uses user defined props interface)
 export function defineComponent<
   Props extends Record<string, any>,
   E extends EmitsOptions = {},
@@ -129,24 +307,23 @@ export function defineComponent<
   },
 ): (props: Props & EmitsToProps<E>) => any
 
-// overload 2: object format with no props
-// (uses user defined props interface)
-// return type is for Vetur and TSX support
+// overload 3: DefineComponentOptions
 export function defineComponent<
-  Props = {},
+  Props = undefined,
   RawBindings = {},
   D = {},
   C extends ComputedOptions = {},
   M extends MethodOptions = {},
-  Mixin extends ComponentOptionsMixin = ComponentOptionsMixin,
-  Extends extends ComponentOptionsMixin = ComponentOptionsMixin,
+  Mixin extends ComponentOptionsMixin = {},
+  Extends extends ComponentOptionsMixin = {},
   E extends EmitsOptions = {},
   EE extends string = string,
-  S extends SlotsType = {},
   I extends ComponentInjectOptions = {},
   II extends string = string,
+  S extends SlotsType = {},
+  Options extends Record<PropertyKey, any> = {},
 >(
-  options: ComponentOptionsWithoutProps<
+  options: DefineComponentOptions<
     Props,
     RawBindings,
     D,
@@ -158,10 +335,11 @@ export function defineComponent<
     EE,
     I,
     II,
-    S
+    S,
+    Options
   >,
-): DefineComponent<
-  Props,
+): DefineComponentFromOptions<
+  undefined extends Props ? {} : Props,
   RawBindings,
   D,
   C,
@@ -170,114 +348,15 @@ export function defineComponent<
   Extends,
   E,
   EE,
-  PublicProps,
-  ResolveProps<Props, E>,
-  ExtractDefaultPropTypes<Props>,
-  S
->
-
-// overload 3: object format with array props declaration
-// props inferred as { [key in PropNames]?: any }
-// return type is for Vetur and TSX support
-export function defineComponent<
-  PropNames extends string,
-  RawBindings,
-  D,
-  C extends ComputedOptions = {},
-  M extends MethodOptions = {},
-  Mixin extends ComponentOptionsMixin = ComponentOptionsMixin,
-  Extends extends ComponentOptionsMixin = ComponentOptionsMixin,
-  E extends EmitsOptions = {},
-  EE extends string = string,
-  S extends SlotsType = {},
-  I extends ComponentInjectOptions = {},
-  II extends string = string,
-  Props = Readonly<{ [key in PropNames]?: any }>,
->(
-  options: ComponentOptionsWithArrayProps<
-    PropNames,
-    RawBindings,
-    D,
-    C,
-    M,
-    Mixin,
-    Extends,
-    E,
-    EE,
-    I,
-    II,
-    S
-  >,
-): DefineComponent<
-  Props,
-  RawBindings,
-  D,
-  C,
-  M,
-  Mixin,
-  Extends,
-  E,
-  EE,
-  PublicProps,
-  ResolveProps<Props, E>,
-  ExtractDefaultPropTypes<Props>,
-  S
->
-
-// overload 4: object format with object props declaration
-// see `ExtractPropTypes` in ./componentProps.ts
-export function defineComponent<
-  // the Readonly constraint allows TS to treat the type of { required: true }
-  // as constant instead of boolean.
-  PropsOptions extends Readonly<ComponentPropsOptions>,
-  RawBindings,
-  D,
-  C extends ComputedOptions = {},
-  M extends MethodOptions = {},
-  Mixin extends ComponentOptionsMixin = ComponentOptionsMixin,
-  Extends extends ComponentOptionsMixin = ComponentOptionsMixin,
-  E extends EmitsOptions = {},
-  EE extends string = string,
-  S extends SlotsType = {},
-  I extends ComponentInjectOptions = {},
-  II extends string = string,
->(
-  options: ComponentOptionsWithObjectProps<
-    PropsOptions,
-    RawBindings,
-    D,
-    C,
-    M,
-    Mixin,
-    Extends,
-    E,
-    EE,
-    I,
-    II,
-    S
-  >,
-): DefineComponent<
-  PropsOptions,
-  RawBindings,
-  D,
-  C,
-  M,
-  Mixin,
-  Extends,
-  E,
-  EE,
-  PublicProps,
-  ResolveProps<PropsOptions, E>,
-  ExtractDefaultPropTypes<PropsOptions>,
-  S
+  I,
+  II,
+  S,
+  Options
 >
 
 // implementation, close to no-op
 /*! #__NO_SIDE_EFFECTS__ */
-export function defineComponent(
-  options: unknown,
-  extraOptions?: ComponentOptions,
-) {
+export function defineComponent(options: unknown, extraOptions?: unknown) {
   return isFunction(options)
     ? // #8326: extend call and options.name access are considered side-effects
       // by Rollup, so we have to wrap it in a pure-annotated IIFE.

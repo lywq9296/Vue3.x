@@ -1,5 +1,6 @@
 import {
   type Component,
+  type ConcreteComponent,
   type DefineComponent,
   Fragment,
   type FunctionalComponent,
@@ -119,7 +120,10 @@ describe('h support w/ plain object component', () => {
       foo: String,
     },
   }
-  h(Foo, { foo: 'ok' })
+
+  expectType<ConcreteComponent>(Foo)
+
+  h(Foo, { test: 'asd' })
   h(Foo, { foo: 'ok', class: 'extra' })
   // no inference in this case
 })
@@ -164,20 +168,22 @@ describe('h inference w/ defineComponent', () => {
 //   h(Foo, { bar: 1, foo: 1 })
 // })
 
-// describe('h inference w/ defineComponent + direct function', () => {
-//   const Foo = defineComponent((_props: { foo?: string; bar: number }) => {})
+describe('h inference w/ defineComponent + direct function', () => {
+  const Foo = defineComponent(
+    (_props: { foo?: string; bar: number }) => () => {},
+  )
 
-//   h(Foo, { bar: 1 })
-//   h(Foo, { bar: 1, foo: 'ok' })
-//   // should allow extraneous props (attrs fallthrough)
-//   h(Foo, { bar: 1, foo: 'ok', class: 'extra' })
-//   // @ts-expect-error should fail on missing required prop
-//   h(Foo, {})
-//   //  @ts-expect-error
-//   h(Foo, { foo: 'ok' })
-//   // @ts-expect-error should fail on wrong type
-//   h(Foo, { bar: 1, foo: 1 })
-// })
+  h(Foo, { bar: 1 })
+  h(Foo, { bar: 1, foo: 'ok' })
+  // should allow extraneous props (attrs fallthrough)
+  h(Foo, { bar: 1, foo: 'ok', class: 'extra' })
+  // @ts-expect-error should fail on missing required prop
+  h(Foo, {})
+  //  @ts-expect-error
+  h(Foo, { foo: 'ok' })
+  // @ts-expect-error should fail on wrong type
+  h(Foo, { bar: 1, foo: 1 })
+})
 
 // #922 and #3218
 describe('h support for generic component type', () => {
@@ -281,4 +287,10 @@ describe('h should work with multiple types', () => {
   h(sampleComponent)
   h(sampleComponent, {})
   h(sampleComponent, {}, [])
+})
+
+// usage in test-utils
+describe('should allow to assign vnode', () => {
+  h(h('div', 'test'))
+  h({} as unknown as VNode | string | { render(): any } | Component)
 })

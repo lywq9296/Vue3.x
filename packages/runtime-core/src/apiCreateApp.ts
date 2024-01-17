@@ -39,7 +39,7 @@ export interface App<HostElement = any> {
   ): this
   use<Options>(plugin: Plugin<Options>, options: Options): this
 
-  mixin(mixin: ComponentOptions): this
+  mixin(mixin: ComponentOptions & Record<string, any>): this
   component(name: string): Component | undefined
   component(name: string, component: Component | DefineComponent): this
   directive<T = any, V = any>(name: string): Directive<T, V> | undefined

@@ -43,6 +43,7 @@ import {
 } from './apiCreateApp'
 import { type Directive, validateDirectiveName } from './directives'
 import {
+  type ComponentInjectOptions,
   type ComponentOptions,
   type ComputedOptions,
   type MethodOptions,
@@ -89,39 +90,6 @@ import type { LifecycleHooks } from './enums'
 export type Data = Record<string, unknown>
 
 /**
- * Public utility type for extracting the instance type of a component.
- * Works with all valid component definition types. This is intended to replace
- * the usage of `InstanceType<typeof Comp>` which only works for
- * constructor-based component definition types.
- *
- * Exmaple:
- * ```ts
- * const MyComp = { ... }
- * declare const instance: ComponentInstance<typeof MyComp>
- * ```
- */
-export type ComponentInstance<T> = T extends { new (): ComponentPublicInstance }
-  ? InstanceType<T>
-  : T extends FunctionalComponent<infer Props, infer Emits>
-    ? ComponentPublicInstance<Props, {}, {}, {}, {}, ShortEmitsToObject<Emits>>
-    : T extends Component<
-          infer Props,
-          infer RawBindings,
-          infer D,
-          infer C,
-          infer M
-        >
-      ? // NOTE we override Props/RawBindings/D to make sure is not `unknown`
-        ComponentPublicInstance<
-          unknown extends Props ? {} : Props,
-          unknown extends RawBindings ? {} : RawBindings,
-          unknown extends D ? {} : D,
-          C,
-          M
-        >
-      : never // not a vue Component
-
-/**
  * For extending allowed non-declared props on components in TSX
  */
 export interface ComponentCustomProps {}
@@ -165,7 +133,7 @@ export interface ComponentInternalOptions {
 
 export interface FunctionalComponent<
   P = {},
-  E extends EmitsOptions | Record<string, any[]> = {},
+  E extends EmitsOptions = {},
   S extends Record<string, any> = any,
   EE extends EmitsOptions = ShortEmitsToObject<E>,
 > extends ComponentInternalOptions {
@@ -194,15 +162,17 @@ export interface ClassComponent {
  * implementation code.
  */
 export type ConcreteComponent<
-  Props = {},
+  Props = Record<string, any>,
   RawBindings = any,
   D = any,
   C extends ComputedOptions = ComputedOptions,
   M extends MethodOptions = MethodOptions,
-  E extends EmitsOptions | Record<string, any[]> = {},
-  S extends Record<string, any> = any,
+  E extends EmitsOptions = {},
+  I extends ComponentInjectOptions = any,
+  S extends SlotsType = any, // S extends Record<string, any> = any,
 > =
-  | ComponentOptions<Props, RawBindings, D, C, M>
+  | (ComponentOptions<Props, RawBindings, D, C, M, any, any, E, I, S> &
+      Record<string, any>)
   | FunctionalComponent<Props, E, S>
 
 /**
@@ -215,8 +185,8 @@ export type Component<
   D = any,
   C extends ComputedOptions = ComputedOptions,
   M extends MethodOptions = MethodOptions,
-  E extends EmitsOptions | Record<string, any[]> = {},
-  S extends Record<string, any> = any,
+  E extends EmitsOptions = {},
+  S extends SlotsType = any, // S extends Record<string, any> = any,
 > =
   | ConcreteComponent<Props, RawBindings, D, C, M, E, S>
   | ComponentPublicInstanceConstructor<Props>

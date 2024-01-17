@@ -1,5 +1,6 @@
 import {
   type VueElementConstructor,
+  defineAsyncComponent,
   defineComponent,
   defineCustomElement,
 } from 'vue'
@@ -82,4 +83,22 @@ describe('defineCustomElement using defineComponent return type', () => {
 
     expectType<string | undefined>(new Comp().a)
   })
+})
+
+describe('dynamic element', () => {
+  const D = defineAsyncComponent(async () => ({
+    props: { n: Number },
+    setup(props) {
+      expectType<number | undefined>(props.n)
+
+      // @ts-expect-error not any
+      expectType<string>(props.n)
+    },
+  }))
+  const E = defineCustomElement(D)
+
+  const e1 = new E()
+  expectType<number | undefined>(e1.n)
+  // @ts-expect-error not any
+  expectType<string>(e1.n)
 })

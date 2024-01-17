@@ -5,9 +5,15 @@ export type UnionToIntersection<U> = (
 ) extends (k: infer I) => void
   ? I
   : never
+// type UndefinedPropsOptional
 
 // make keys required but keep undefined values
 export type LooseRequired<T> = { [P in keyof (T & Required<T>)]: T[P] }
+export type LooseOptional<T> = {
+  [P in keyof T as undefined extends T[P] ? P : never]?: T[P]
+} extends infer Optional
+  ? { [K in keyof (Omit<T, keyof Optional> & Optional)]: (T & Optional)[K] }
+  : never
 
 // If the type T accepts type "any", output type Y, otherwise output type N.
 // https://stackoverflow.com/questions/49927523/disallow-call-with-any/49928360#49928360

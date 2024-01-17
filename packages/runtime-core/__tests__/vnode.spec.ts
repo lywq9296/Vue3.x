@@ -14,7 +14,7 @@ import {
 import type { Data } from '../src/component'
 import { PatchFlags, ShapeFlags } from '@vue/shared'
 import { h, isReactive, reactive, ref, setBlockTracking, withCtx } from '../src'
-import { createApp, nodeOps, serializeInner } from '@vue/runtime-test'
+import { createApp, nodeOps, render, serializeInner } from '@vue/runtime-test'
 import { setCurrentRenderingInstance } from '../src/componentRenderContext'
 
 describe('vnode', () => {
@@ -634,7 +634,7 @@ describe('vnode', () => {
       }
       const vnode =
         (openBlock(), createBlock(Parent, null, { default: slotFn }))
-      createApp(vnode).mount(nodeOps.createElement('div'))
+      render(vnode, nodeOps.createElement('div'))
       expect(isBlockTreeEnabled).toStrictEqual(1)
     })
   })

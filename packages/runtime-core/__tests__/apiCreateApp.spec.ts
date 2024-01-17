@@ -476,8 +476,8 @@ describe('api: createApp', () => {
     let merged: string
     const App = defineComponent({
       render() {},
-      mixins: [{ foo: 'mixin' }],
-      extends: { foo: 'extends' },
+      mixins: [defineComponent({ foo: 'mixin' })],
+      extends: defineComponent({ foo: 'extends' }),
       foo: 'local',
       beforeCreate() {
         merged = this.$options.foo
