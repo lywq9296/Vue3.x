@@ -1386,4 +1386,21 @@ describe('defineCustomElement', () => {
     await nextTick()
     expect(e.shadowRoot!.innerHTML).toBe(`false,boolean`)
   })
+
+  test('prop name is the same as native attribute', async () => {
+    const E = defineCustomElement({
+      props: {
+        tagName: {
+          type: String,
+        },
+      },
+      render() {
+        return this.tagName
+      },
+    })
+    customElements.define('el-attr-tag-name', E)
+    container.innerHTML = '<el-attr-tag-name tag-name="foo">'
+    const e = container.childNodes[0] as VueElement
+    expect(e.shadowRoot!.innerHTML).toBe(`foo`)
+  })
 })

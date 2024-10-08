@@ -451,12 +451,15 @@ export class VueElement
     }
 
     // defining getter/setters on prototype
+    const propValue: Record<string, any> = {}
     for (const key of declaredPropKeys.map(camelize)) {
+      if (key in this) propValue[key] = this[key as keyof this]
       Object.defineProperty(this, key, {
         get() {
-          return this._getProp(key)
+          return key in propValue ? propValue[key] : this._getProp(key)
         },
         set(val) {
+          if (key in this) propValue[key] = val
           this._setProp(key, val, true, true)
         },
       })
