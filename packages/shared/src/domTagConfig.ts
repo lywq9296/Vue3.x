@@ -14,6 +14,8 @@ const HTML_TAGS =
   'option,output,progress,select,textarea,details,dialog,menu,' +
   'summary,template,blockquote,iframe,tfoot'
 
+const LATE_ADDED_TAGS = 'search'
+
 // https://developer.mozilla.org/en-US/docs/Web/SVG/Element
 const SVG_TAGS =
   'svg,animate,animateMotion,animateTransform,circle,clipPath,color-profile,' +
@@ -43,22 +45,24 @@ const VOID_TAGS =
  * Do NOT use in runtime code paths unless behind `__DEV__` flag.
  */
 export const isHTMLTag: (key: string) => boolean =
-  /*#__PURE__*/ makeMap(HTML_TAGS)
+  /*@__PURE__*/ makeMap(HTML_TAGS)
 /**
  * Compiler only.
  * Do NOT use in runtime code paths unless behind `__DEV__` flag.
  */
 export const isSVGTag: (key: string) => boolean =
-  /*#__PURE__*/ makeMap(SVG_TAGS)
+  /*@__PURE__*/ makeMap(SVG_TAGS)
 /**
  * Compiler only.
  * Do NOT use in runtime code paths unless behind `__DEV__` flag.
  */
 export const isMathMLTag: (key: string) => boolean =
-  /*#__PURE__*/ makeMap(MATH_TAGS)
+  /*@__PURE__*/ makeMap(MATH_TAGS)
 /**
  * Compiler only.
  * Do NOT use in runtime code paths unless behind `__DEV__` flag.
  */
 export const isVoidTag: (key: string) => boolean =
-  /*#__PURE__*/ makeMap(VOID_TAGS)
+  /*@__PURE__*/ makeMap(VOID_TAGS)
+
+export const isLateTag = /*#__PURE__*/ makeMap(LATE_ADDED_TAGS)

@@ -210,7 +210,8 @@ export function defineComponent<
         : ExtractPropTypes<RuntimePropsOptions>
       : { [key in RuntimePropsKeys]?: any }
     : TypeProps,
-  ResolvedProps = Readonly<InferredProps & EmitsToProps<ResolvedEmits>>,
+  ResolvedProps = Readonly<InferredProps> &
+    Readonly<EmitsToProps<ResolvedEmits>>,
   TypeRefs extends Record<string, unknown> = {},
 >(
   options: {
@@ -297,9 +298,9 @@ export function defineComponent(
   extraOptions?: ComponentOptions,
 ) {
   return isFunction(options)
-    ? // #8326: extend call and options.name access are considered side-effects
+    ? // #8236: extend call and options.name access are considered side-effects
       // by Rollup, so we have to wrap it in a pure-annotated IIFE.
-      /*#__PURE__*/ (() =>
+      /*@__PURE__*/ (() =>
         extend({ name: options.name }, extraOptions, { setup: options }))()
     : options
 }

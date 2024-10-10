@@ -24,6 +24,7 @@ import {
   type TemplateLiteral,
   type TextNode,
   type VNodeCall,
+  getSetupReturnedHelper,
   getVNodeBlockHelper,
   getVNodeHelper,
   locStub,
@@ -99,7 +100,7 @@ interface MappingItem {
   name: string | null
 }
 
-const PURE_ANNOTATION = `/*#__PURE__*/`
+const PURE_ANNOTATION = `/*@__PURE__*/`
 
 const aliasHelper = (s: symbol) => `${helperNameMap[s]}: _${helperNameMap[s]}`
 
@@ -318,6 +319,8 @@ export function generate(
   if (!__BROWSER__ && options.bindingMetadata && !options.inline) {
     // binding optimization args
     args.push('$props', '$setup', '$data', '$options')
+    // Add helper 'getSetupReturnedHelper' for $setup
+    context.helper(getSetupReturnedHelper())
   }
   const signature =
     !__BROWSER__ && options.isTS
@@ -725,7 +728,7 @@ function genNode(node: CodegenNode | symbol | string, context: CodegenContext) {
       !__BROWSER__ && genReturnStatement(node, context)
       break
 
-    /* istanbul ignore next */
+    /* v8 ignore start */
     case NodeTypes.IF_BRANCH:
       // noop
       break
@@ -736,6 +739,7 @@ function genNode(node: CodegenNode | symbol | string, context: CodegenContext) {
         const exhaustiveCheck: never = node
         return exhaustiveCheck
       }
+    /* v8 ignore stop */
   }
 }
 

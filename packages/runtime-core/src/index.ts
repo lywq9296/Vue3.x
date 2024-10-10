@@ -28,6 +28,8 @@ export {
   // effect
   effect,
   stop,
+  getCurrentWatcher,
+  onWatcherCleanup,
   ReactiveEffect,
   // effect scope
   effectScope,
@@ -142,6 +144,7 @@ export {
   resolveComponent,
   resolveDirective,
   resolveDynamicComponent,
+  resolveSetupReturned,
 } from './helpers/resolveAssets'
 // For integration with runtime compiler
 export { registerRuntimeCompiler, isRuntimeOnly } from './component'
@@ -227,7 +230,7 @@ export type {
   MultiWatchSources,
   WatchEffect,
   WatchOptions,
-  WatchOptionsBase,
+  WatchEffectOptions as WatchOptionsBase,
   WatchCallback,
   WatchSource,
   WatchHandle,
